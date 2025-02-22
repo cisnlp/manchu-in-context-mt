@@ -244,7 +244,7 @@ def get_parallelSent(mnc_sen):
                     #     print('repetitive!')
     return parallelSent_set
 
-# retrieve the parallel examples using
+# retrieve the parallel examples using bm25
 def get_parallelSent_bm25_top_n(analyzed_query,tokenized_corpus,mnc_eng_parallel_example_dict,n=10):
     tokenized_query = analyzed_query.replace(',',' ,').replace('.',' .').replace('=',' =').replace('~',' ~').split(' ')
     retreived_sens = bm25.get_top_n(tokenized_query, tokenized_corpus, n)

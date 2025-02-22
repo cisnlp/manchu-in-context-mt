@@ -9,7 +9,7 @@ def default_value():
     return 'not found in dictionary, could be a proper noun or a typo'
 from pipeline.get_components import (convert2buleku_ortho, morphology_analyzer_plus_assembled_dict,get_manchu_entries,
                             mnc_eng_parallel_example_dict, tokenized_corpus, get_parallelSent, get_parallelSent_bm25_top_n, 
-                            get_grammar_sections, grammar_sections_lp_dict,
+                            get_grammar_sections, grammar_sections_sp_dict,grammar_sections_l_dict,grammar_sections_lp_dict,
                             get_manchu_entries_encrypted, transform_sen, encrypt_parallelSent)
 
 # Dictionary to map shorthand model names to full model IDs
@@ -28,6 +28,10 @@ def get_parser():
                         help="Shorthand model ID (e.g., 'llama3_1b' for 'meta-llama/Llama-3.2-1B-Instruct')")
     # positional argument for test_sens, expecting a file path
     parser.add_argument("--test_sens", type=str, help="Path to the test sentences file")
+    # positional argument for the setting for each component
+    parser.add_argument("--para", type=str, help="Choose a variant for parallel sentences")
+    parser.add_argument("--grammar", type=str, help="Choose a variant for grammar")
+    parser.add_argument("--cot", type=str, help="Choose a variant for CoT prompting")
     return parser
 
 if __name__ == '__main__':
@@ -45,15 +49,14 @@ if __name__ == '__main__':
             mnc_sens.append(mnc_sen)
         
     # select a model
-    model_id = MODEL_MAP[args.model_id_short]# Map the shorthand model_id to the full model ID
-    
+    model_id = MODEL_MAP[args.model_id]# Map the shorthand model_id to the full model ID
     llm = LLM(model=model_id, dtype='float16', 
             download_dir='./model_cache',
             max_model_len=20000)
-        
-    # model_id = "meta-llama/Llama-3.1-8B-Instruct"
-    # # offloading parts of the model due to hardware limitation
-    # llm = LLM(model=model_id, dtype='float16', cpu_offload_gb=4.5, max_model_len=2000)
+    # load the setting of components
+    P = args.para
+    G = args.grammar
+    C = args.cot
 
     # generate prompts
     prompt_messages = []
@@ -61,27 +64,39 @@ if __name__ == '__main__':
         # components
         sent = convert2buleku_ortho(morphology_analyzer_plus_assembled_dict(mnc_sen))
         wordbyword = '\n'.join(get_manchu_entries(mnc_sen,collocations=True,suffixes=True,masked_out=False))
-        parallel_sentences = component_para('Manchu', 'English','\n'.join(get_parallelSent_bm25_top_n(sent,tokenized_corpus,mnc_eng_parallel_example_dict,n=10)))
-        # grammar_basic = component_grammar('')
-        # grammar_long = component_grammar(get_grammar_sections(mnc_sen,grammar_sections_l_dict))
-        # grammar_long_para = component_grammar(get_grammar_sections(mnc_sen,grammar_sections_lp_dict))
-        grammar_short = component_grammar(get_grammar_sections(mnc_sen,grammar_sections_sp_dict))
-        # cot = component_cot('Manchu', 'English')
+        parallel_sentences = {
+            "None": '',
+            "bm25": component_para('Manchu', 'English','\n'.join(get_parallelSent_bm25_top_n(sent,tokenized_corpus,mnc_eng_parallel_example_dict,n=10))),
+            "dict": component_para('Manchu', 'English','\n'.join(get_parallelSent(mnc_sen)))
+            }        
+        grammar = {
+            "None": '',
+            "grammar_basic":component_grammar(''),
+            "grammar_short":component_grammar(get_grammar_sections(mnc_sen,grammar_sections_sp_dict)),
+            "grammar_long":component_grammar(get_grammar_sections(mnc_sen,grammar_sections_l_dict)),
+            "grammar_long_para":component_grammar(get_grammar_sections(mnc_sen,grammar_sections_lp_dict))
+        }
+
+        cot = {
+            "None": '',
+            "annotate":component_cot_Ca('Manchu', 'English'),
+            "annotate_syntax":component_cot_Cas('Manchu', 'English')
+        }
 
         # # encrypted components
         # sent_encrypted = transform_sen(convert2buleku_ortho(morphology_analyzer_plus_assembled_dict(mnc_sen)))
         # wordbyword_encrypted = '\n'.join(get_manchu_entries_encrypted(mnc_sen))
         # parallel_sentences_encrypted = component_para('Unknown language', 'English','\n'.join(encrypt_parallelSent(get_parallelSent_bm25_top_n(sent,tokenized_corpus,mnc_eng_parallel_example_dict,n=10))))
-        # cot_encrypted = component_cot('Unknown language', 'English')
+        # cot_encrypted = component_cot_Ca('Unknown language', 'English')
+        # prompt = prompt_template('Manchu', 'English', sent_encrypted, wordbyword_encrypted, [parallel_sentences_encrypted,cot_encrypted])
 
-        # π(μ(x), Dl+s+c, Pbm, Gs)
-        prompt_Gs = prompt_template('Manchu', 'English', sent, wordbyword, [parallel_sentences,grammar_short])
+        # e.g. π(μ(x), Dl+s+c, Pbm, Gs, Ca)
+        prompt = prompt_template('Manchu', 'English', sent, wordbyword, [parallel_sentences[P],grammar[G],cot[C]])
         message = [
             {"role": "system", "content": prompt_system('Manchu')},
-            {"role": "user", "content": prompt_Gs}
+            {"role": "user", "content": prompt}
         ]
         prompt_messages.append(message)
-
 
     # Create a sampling params object.
     #sampling_params = SamplingParams(temperature=0.8, top_p=0.95, max_tokens=1024)
@@ -100,6 +115,6 @@ if __name__ == '__main__':
         # print(translation)
 
     # Save the list to a pickle file
-    with open(f"results_{args.test_sens.replace('.txt','')}_{args.model_id_short}.pkl", "wb") as f:
+    with open(f"results_{args.test_sens.replace('.txt','')}_{args.model_id}.pkl", "wb") as f:
         pickle.dump(results, f)
         print('results saved')
