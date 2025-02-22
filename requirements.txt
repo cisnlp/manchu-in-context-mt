@@ -1,0 +1,3 @@
+git+https://github.com/Peirh/manchu_morphology_analyzer.git@v2.0.5
+vllm==0.6.3.post1
+rank-bm25==0.2.2
