@@ -90,7 +90,7 @@ if __name__ == '__main__':
         # cot_encrypted = component_cot_Ca('Unknown language', 'English')
         # prompt = prompt_template('Manchu', 'English', sent_encrypted, wordbyword_encrypted, [parallel_sentences_encrypted,cot_encrypted])
 
-        # e.g. π(μ(x), Dl+s+c, Pbm, Gs, Ca)
+        # e.g. π(μ(x), Dl+s+c, Pbm)
         prompt = prompt_template('Manchu', 'English', sent, wordbyword, [parallel_sentences[P],grammar[G],cot[C]])
         message = [
             {"role": "system", "content": prompt_system('Manchu')},
@@ -115,6 +115,6 @@ if __name__ == '__main__':
         # print(translation)
 
     # Save the list to a pickle file
-    with open(f"results_{args.test_sens.replace('.txt','')}_{args.model_id}.pkl", "wb") as f:
+    with open(f"results_{args.test_sens.replace('.txt','')}_{args.model_id}_{P}_{G}_{C}.pkl", "wb") as f:
         pickle.dump(results, f)
         print('results saved')
