@@ -24,10 +24,10 @@ MODEL_MAP = {
 def get_parser():
     parser = argparse.ArgumentParser(description="LLM model selection")
     # positional argument for model_id_short (expecting the shorthand code)
-    parser.add_argument("model_id_short", type=str, choices=MODEL_MAP.keys(),
+    parser.add_argument("--model_id_short", type=str, choices=MODEL_MAP.keys(),
                         help="Shorthand model ID (e.g., 'llama3_1b' for 'meta-llama/Llama-3.2-1B-Instruct')")
     # positional argument for test_sens, expecting a file path
-    parser.add_argument("test_sens", type=str, help="Path to the test sentences file")
+    parser.add_argument("--test_sens", type=str, help="Path to the test sentences file")
     return parser
 
 if __name__ == '__main__':
@@ -41,11 +41,9 @@ if __name__ == '__main__':
     # get the input sentences
     mnc_sens = []
     with open(args.test_sens, mode='r',encoding='utf8') as file:
-        for sen in file:
-            mnc_sen,zho = sen.strip().split('\t')
-            mnc_sen = re.sub('\(.*\)','',mnc_sen)#remove ()
-            mnc_sen = re.sub(r'([^\w\s])', r' \1', mnc_sen)#add space before punctuations
+        for mnc_sen in file:
             mnc_sens.append(mnc_sen)
+        
     # select a model
     model_id = MODEL_MAP[args.model_id_short]# Map the shorthand model_id to the full model ID
     
