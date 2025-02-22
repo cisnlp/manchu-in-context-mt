@@ -24,7 +24,7 @@ MODEL_MAP = {
 def get_parser():
     parser = argparse.ArgumentParser(description="LLM model selection")
     # positional argument for model_id_short (expecting the shorthand code)
-    parser.add_argument("--model_id_short", type=str, choices=MODEL_MAP.keys(),
+    parser.add_argument("--model_id", type=str, choices=MODEL_MAP.keys(),
                         help="Shorthand model ID (e.g., 'llama3_1b' for 'meta-llama/Llama-3.2-1B-Instruct')")
     # positional argument for test_sens, expecting a file path
     parser.add_argument("--test_sens", type=str, help="Path to the test sentences file")
@@ -61,12 +61,11 @@ if __name__ == '__main__':
         # components
         sent = convert2buleku_ortho(morphology_analyzer_plus_assembled_dict(mnc_sen))
         wordbyword = '\n'.join(get_manchu_entries(mnc_sen,collocations=True,suffixes=True,masked_out=False))
-        
         parallel_sentences = component_para('Manchu', 'English','\n'.join(get_parallelSent_bm25_top_n(sent,tokenized_corpus,mnc_eng_parallel_example_dict,n=10)))
         # grammar_basic = component_grammar('')
         # grammar_long = component_grammar(get_grammar_sections(mnc_sen,grammar_sections_l_dict))
-        grammar_long_para = component_grammar(get_grammar_sections(mnc_sen,grammar_sections_lp_dict))
-        # grammar_short = component_grammar(get_grammar_sections(mnc_sen,grammar_sections_sp_dict))
+        # grammar_long_para = component_grammar(get_grammar_sections(mnc_sen,grammar_sections_lp_dict))
+        grammar_short = component_grammar(get_grammar_sections(mnc_sen,grammar_sections_sp_dict))
         # cot = component_cot('Manchu', 'English')
 
         # # encrypted components
@@ -75,11 +74,11 @@ if __name__ == '__main__':
         # parallel_sentences_encrypted = component_para('Unknown language', 'English','\n'.join(encrypt_parallelSent(get_parallelSent_bm25_top_n(sent,tokenized_corpus,mnc_eng_parallel_example_dict,n=10))))
         # cot_encrypted = component_cot('Unknown language', 'English')
 
-        # π(μ(x), Dl+s+c, Pbm, Glp)
-        prompt_Glp = prompt_template('Manchu', 'English', sent, wordbyword, [parallel_sentences,grammar_long_para])
+        # π(μ(x), Dl+s+c, Pbm, Gs)
+        prompt_Gs = prompt_template('Manchu', 'English', sent, wordbyword, [parallel_sentences,grammar_short])
         message = [
             {"role": "system", "content": prompt_system('Manchu')},
-            {"role": "user", "content": prompt_Glp}
+            {"role": "user", "content": prompt_Gs}
         ]
         prompt_messages.append(message)
 
