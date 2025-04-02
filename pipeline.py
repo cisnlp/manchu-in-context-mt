@@ -7,10 +7,11 @@ from pipeline.prompts import extract_enclosed_text, prompt_system, prompt_direct
 from manchu_morphology_analyzer import manchu_morphology_analyzer
 def default_value():
     return 'not found in dictionary, could be a proper noun or a typo'
-from pipeline.get_components import (convert2buleku_ortho, morphology_analyzer_plus_assembled_dict,get_manchu_entries,
-                            mnc_eng_parallel_example_dict, tokenized_corpus, get_parallelSent, get_parallelSent_bm25_top_n, 
+from pipeline.get_components import (convert2buleku_ortho, morphology_analyzer_plus_assembled_dict,get_manchu_entries,assembled_dict,
+                            get_parallelSent, get_parallelSent_bm25_top_n,prepare_bm25_retrieval_corpus,
                             get_grammar_sections, grammar_sections_sp_dict,grammar_sections_l_dict,grammar_sections_lp_dict,
-                            get_manchu_entries_encrypted, transform_sen, encrypt_parallelSent)
+                            get_manchu_entries_encrypted, transform_sen, encrypt_parallelSent,
+                            word_to_sentence_mnc2eng)
 
 # Dictionary to map shorthand model names to full model IDs
 MODEL_MAP = {
@@ -58,23 +59,26 @@ if __name__ == '__main__':
     G = args.grammar
     C = args.cot
 
+    # prepare the corpus for bm25 retrieval
+    bm25,tokenized_corpus,parallel_example_dict = prepare_bm25_retrieval_corpus(word_to_sentence_mnc2eng)
+
     # generate prompts
     prompt_messages = []
     for mnc_sen in mnc_sens:
         # components
-        sent = convert2buleku_ortho(morphology_analyzer_plus_assembled_dict(mnc_sen))
-        wordbyword = '\n'.join(get_manchu_entries(mnc_sen,collocations=True,suffixes=True,masked_out=False))
+        sent = convert2buleku_ortho(morphology_analyzer_plus_assembled_dict(mnc_sen,assembled_dict))
+        wordbyword = '\n'.join(get_manchu_entries(mnc_sen,assembled_dict,collocations=True,suffixes=True,masked_out=False))
         parallel_sentences = {
             "None": '',
-            "bm25": component_para('Manchu', 'English','\n'.join(get_parallelSent_bm25_top_n(sent,tokenized_corpus,mnc_eng_parallel_example_dict,n=10))),
-            "dict": component_para('Manchu', 'English','\n'.join(get_parallelSent(mnc_sen)))
+            "bm25": component_para('Manchu', 'English','\n'.join(get_parallelSent_bm25_top_n(sent,bm25,tokenized_corpus,parallel_example_dict,n=10))),
+            "dict": component_para('Manchu', 'English','\n'.join(get_parallelSent(mnc_sen,word_to_sentence_mnc2eng,assembled_dict)))
             }        
         grammar = {
             "None": '',
             "grammar_basic":component_grammar(''),
-            "grammar_short":component_grammar(get_grammar_sections(mnc_sen,grammar_sections_sp_dict)),
-            "grammar_long":component_grammar(get_grammar_sections(mnc_sen,grammar_sections_l_dict)),
-            "grammar_long_para":component_grammar(get_grammar_sections(mnc_sen,grammar_sections_lp_dict))
+            "grammar_short":component_grammar(get_grammar_sections(mnc_sen,grammar_sections_sp_dict,assembled_dict)),
+            "grammar_long":component_grammar(get_grammar_sections(mnc_sen,grammar_sections_l_dict,assembled_dict)),
+            "grammar_long_para":component_grammar(get_grammar_sections(mnc_sen,grammar_sections_lp_dict,assembled_dict))
         }
 
         cot = {
@@ -85,15 +89,15 @@ if __name__ == '__main__':
 
         # # encrypted components
         # sent_encrypted = transform_sen(convert2buleku_ortho(morphology_analyzer_plus_assembled_dict(mnc_sen)))
-        # wordbyword_encrypted = '\n'.join(get_manchu_entries_encrypted(mnc_sen))
-        # parallel_sentences_encrypted = component_para('Unknown language', 'English','\n'.join(encrypt_parallelSent(get_parallelSent_bm25_top_n(sent,tokenized_corpus,mnc_eng_parallel_example_dict,n=10))))
+        # wordbyword_encrypted = '\n'.join(get_manchu_entries_encrypted(mnc_sen,assembled_dict))
+        # parallel_sentences_encrypted = component_para('Unknown language', 'English','\n'.join(encrypt_parallelSent(get_parallelSent_bm25_top_n(sent,bm5,tokenized_corpus,mnc_eng_parallel_example_dict,n=10))))
         # cot_encrypted = component_cot_Ca('Unknown language', 'English')
         # prompt = prompt_template('Manchu', 'English', sent_encrypted, wordbyword_encrypted, [parallel_sentences_encrypted,cot_encrypted])
 
         # e.g. π(μ(x), Dl+s+c, Pbm)
         prompt = prompt_template('Manchu', 'English', sent, wordbyword, [parallel_sentences[P],grammar[G],cot[C]])
         message = [
-            {"role": "system", "content": prompt_system('Manchu')},
+            {"role": "system", "content": prompt_system('English')},
             {"role": "user", "content": prompt}
         ]
         prompt_messages.append(message)

@@ -91,3 +91,32 @@ Unlike English, which uses prepositions, Manchu exclusively uses postpositions.
 The Manchu language is agglutinative in word structure, meaning that words are formed by adding suffixes to the root, and each morpheme in a word has one distinct meaning or grammatical function.
 
 {grammar_sections}"""
+
+def component_para_zho(src_lang,tgt_lang,parallel_sent):
+    return f"""为了帮助你翻译，以下是一些相关的{src_lang}-{tgt_lang}双语对照的句子，作为例子供你参考:
+{parallel_sent}"""
+
+def prompt_template_zho(src_lang, tgt_lang, sent, wordbyword, components_list):
+    components = '\n'.join(components_list)
+    prompt = f"""
+请将以下这个{src_lang}句子翻译成{tgt_lang}：
+{sent}
+该句子中的语素已经被切分：动词词干与动词后缀之间用 '=' 分隔，名词词干与名词后缀之间用 '~' 分隔。
+注意，有些词既可以视为一个整体（例如 'oho'），也可以被分析为词干加词缀的形式（例如 o=ho），不同的分析方式用 '/' 分隔，请你根据上下文选择最合适的一种分析。
+
+为协助你完成翻译任务，请参考下面给你提供的每个{src_lang}词的{tgt_lang}解释。
+某些词可能具有多种含义，请根据上下文从中选择最贴切的一项。
+以下是原{src_lang}句子中每个词在词典中的解释：
+{wordbyword}
+
+请注意，有时两个或多个词会形成固定的词组搭配，表达特定含义。你应参考词典条目中列出的这些词组搭配。
+例如，“mama”意为“祖母”，“erxe=”意为“照看”，但它们组成的词组搭配“mama erxe=”则表示“得天花，出痘”。
+遇到这类情况时，请判断是否存在符合上下文的搭配，并据此选择最合适的翻译方式。
+
+{components}
+
+请结合以上所有信息，将给你的原{src_lang}句子准确地翻译成{tgt_lang}。
+请记住，你的原{src_lang}句子是：{sent}
+最后，请确保将你的最终翻译内容用 ### 括起来。例如，如果你的翻译是 “你好，世界”，你最后的输出应为 ###你好，世界###。
+"""
+    return prompt

@@ -18,13 +18,19 @@ script_dir = os.path.dirname(os.path.abspath(__file__))
 # load the pickled default dictionary
 def default_value():
     return 'not found in dictionary, could be a proper noun or a typo'
-with open(os.path.join(script_dir, "assembled_dict.pkl"), "rb") as f:  # 'rb' means read in binary mode
-    assembled_dict = pickle.load(f)
-with open(os.path.join(script_dir, "assembled_dict_encrypted.pkl"), "rb") as f:  # 'rb' means read in binary mode
-    assembled_dict_encrypted = pickle.load(f)
+# Load the combined pickle file for dictionaries
+with open(os.path.join(script_dir, "dictionaries_combined.pkl"), "rb") as f:
+    combined_dicts = pickle.load(f)
+# Access each dictionary individually
+assembled_dict = combined_dicts['assembled_dict']
+assembled_dict_encrypted = combined_dicts['assembled_dict_encrypted']
+assembled_dict_zho = combined_dicts['assembled_dict_zho']
 # load the word_to_sentence dict, for retrieving parallel sentences for each word
-with open(os.path.join(script_dir, "word_to_sentence_dict.pkl"), "rb") as f:
-    word_to_sentence = pickle.load(f)
+with open(os.path.join(script_dir,"word_to_sentence_combined.pkl"), "rb") as f:
+    combined_word_to_sentence = pickle.load(f)
+# Access each dictionary individually
+word_to_sentence_mnc2eng = combined_word_to_sentence['mnc2eng']
+word_to_sentence_mnc2zho = combined_word_to_sentence['mnc2zho']
 # load the freq_token_list dict, for experiment of masking out unfrequent token during retrieving dictionary entries
 with open(os.path.join(script_dir, "freq_token_list.pkl"), "rb") as f:
     freq_token_list = pickle.load(f)
@@ -37,16 +43,19 @@ with open(os.path.join(script_dir, "grammar_sections_short_para.yaml"), "r", enc
     grammar_sections_sp_dict = yaml.safe_load(file) #safe_load is recommended because it avoids executing potentially unsafe Python code embedded in the YAML file.
 
 # create the corpus for bm25 retrieval of parallel examples
-all_sen = [sen for sens in word_to_sentence.values() for sen in sens]
-all_sen = list(set(all_sen))
-# create a mnc:eng dict
-mnc_eng_parallel_example_dict = {manchu_morphology_analyzer.noun_verb_splitter(mnc): eng.strip() for mnc, eng in (pair.split('\n') for pair in all_sen)}
-# create the corpus for retrieval
-corpus = list(mnc_eng_parallel_example_dict.keys())
-# split each sentence according to morpheme
-tokenized_corpus = [sen.replace(',',' ,').replace('.',' .').replace('=',' =').replace('~',' ~').split(' ') for sen in corpus]
-# Initialize BM25
-bm25 = BM25Okapi(tokenized_corpus)
+def prepare_bm25_retrieval_corpus(word_to_sentence):
+    all_sen = [sen for sens in word_to_sentence.values() for sen in sens]
+    all_sen = list(set(all_sen))
+    # create a mnc:eng dict
+    parallel_example_dict = {manchu_morphology_analyzer.noun_verb_splitter(mnc): eng.strip() for mnc, eng in (pair.split('\n') for pair in all_sen)}
+    # create the corpus for retrieval
+    corpus = list(parallel_example_dict.keys())
+    # split each sentence according to morpheme
+    tokenized_corpus = [sen.replace(',',' ,').replace('.',' .').replace('=',' =').replace('~',' ~').replace('/',' /').split(' ') for sen in corpus]
+    # Initialize BM25
+    bm25 = BM25Okapi(tokenized_corpus)
+    return bm25,tokenized_corpus,parallel_example_dict
+#bm25,tokenized_corpus,parallel_example_dict = prepare_bm25_retrieval_corpus(word_to_sentence_mnc2eng)
 
 # a dictionary that converts suffix into gloss
 suffix_to_gloss_dict ={
@@ -99,7 +108,7 @@ suffix_to_gloss_dict ={
 
 
 # wrap the manchu_morphology_analyzer, before using manchu_morphology_analyzer, first check if the token is already in the entries of assembled_dict
-def morphology_analyzer_plus_assembled_dict(sen):
+def morphology_analyzer_plus_assembled_dict(sen,assembled_dict):
     analysis_list = []
     for word in sen.split(' '):
         multiple_possible_analysis = set()
@@ -142,7 +151,7 @@ def enhance_with_relevant_collocations(eng_explanation,mnc_sen_splitted):
     else:
         return eng_explanation
 
-def get_manchu_entries(mnc_sen, collocations=True, suffixes=True, masked_out = False):
+def get_manchu_entries(mnc_sen,assembled_dict,collocations=True, suffixes=True, masked_out=False,abkai_transliteration=True):
     entries_list = []
     # remove punctuation
     mnc_sen = re.sub(r'[^\w\s]', ' ', mnc_sen)
@@ -150,7 +159,7 @@ def get_manchu_entries(mnc_sen, collocations=True, suffixes=True, masked_out = F
 
     mnc_sen = re.sub('\(.*\)','',mnc_sen)
     mnc_sen = mnc_sen.strip()
-    mnc_sen_splitted = morphology_analyzer_plus_assembled_dict(mnc_sen)
+    mnc_sen_splitted = morphology_analyzer_plus_assembled_dict(mnc_sen,assembled_dict)
     #print(zho_sen,'\n',mnc_sen_splitted)
     # split suffix
     mnc_sen_splitted = re.sub(r'=', r'= =', mnc_sen_splitted)
@@ -160,7 +169,9 @@ def get_manchu_entries(mnc_sen, collocations=True, suffixes=True, masked_out = F
     #print(word_list)
     for word in word_list:
         #print(word,convert2buleku_ortho(word))
-        word = convert2buleku_ortho(word)
+        if abkai_transliteration == True:
+            word = convert2buleku_ortho(word)
+
         if "/" not in word:
             eng_explanation = assembled_dict[re.sub('=$','mbi',word)]
             eng = enhance_with_relevant_collocations(eng_explanation,mnc_sen_splitted)
@@ -191,7 +202,7 @@ def get_manchu_entries(mnc_sen, collocations=True, suffixes=True, masked_out = F
         entries_list = [entry for entry in entries_list if re.match(r"^[^:]*", entry).group() in freq_token_list]
     return entries_list
 
-def get_parallelSent(mnc_sen):
+def get_parallelSent(mnc_sen,word_to_sentence):
     parallelSent_set = set()
     # remove punctuation
     mnc_sen = re.sub(r'[^\w\s]', ' ', mnc_sen)
@@ -245,16 +256,16 @@ def get_parallelSent(mnc_sen):
     return parallelSent_set
 
 # retrieve the parallel examples using bm25
-def get_parallelSent_bm25_top_n(analyzed_query,tokenized_corpus,mnc_eng_parallel_example_dict,n=10):
-    tokenized_query = analyzed_query.replace(',',' ,').replace('.',' .').replace('=',' =').replace('~',' ~').split(' ')
+def get_parallelSent_bm25_top_n(analyzed_query,bm25,tokenized_corpus,parallel_example_dict,n=10):
+    tokenized_query = analyzed_query.replace(',',' ,').replace('.',' .').replace('=',' =').replace('~',' ~').replace('/',' /').split(' ')
     retreived_sens = bm25.get_top_n(tokenized_query, tokenized_corpus, n)
 
     retrieved_pairs = []
     for sen in retreived_sens:
-        joined_sen = ' '.join(sen).replace(' ,',',').replace(' .','.').replace(' =','=').replace(' ~','~')
+        joined_sen = ' '.join(sen).replace(' ,',',').replace(' .','.').replace(' =','=').replace(' ~','~').replace(' /','/')
         # making sure that the retrieved sentence is not identical to the query
         if joined_sen != analyzed_query:
-            retrieved_pairs.append(f"Manchu sentence: {joined_sen}\nEnglish Translation: {mnc_eng_parallel_example_dict[joined_sen]}")
+            retrieved_pairs.append(f"Manchu sentence: {joined_sen}\nEnglish Translation: {parallel_example_dict[joined_sen]}")
         # else:
         #     print('same!',joined_sen)
     return retrieved_pairs
