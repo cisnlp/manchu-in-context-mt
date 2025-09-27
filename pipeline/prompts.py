@@ -25,8 +25,7 @@ def prompt_direct_translate(src_lang, tgt_lang, sent):
     prompt = f"""Please help me translate the following sentence from {src_lang} to {tgt_lang}:
 {sent}
 Please try your best to translate, it's okay if your translation is bad. Do not refuse to try it. I won't blame you.
-Please enclose your translation in <Answer>...</Answer> tags.
-For example, if your translation is "Hello world", the last part of your output should be <Answer>Hello world</Answer>.
+Please enclose your translation in <Answer>...</Answer> tags. For example, if your translation is "Hello world", the last part of your output should be <Answer>Hello world</Answer>.
 
 """
     return prompt
@@ -36,8 +35,7 @@ def prompt_direct_translate_morph(src_lang, tgt_lang, segmented_sent):
 {segmented_sent}
 The morphemes in this sentence have been segmented: the verb stem and verbal suffixes are separated by '=', the noun stem and nominal suffixes are separated by '~'. 
 Please try your best to translate, it's okay if your translation is bad. Do not refuse to try it. I won't blame you.
-Please enclose your translation in <Answer>...</Answer> tags.
-For example, if your translation is "Hello world", the last part of your output should be <Answer>Hello world</Answer>.
+Please enclose your translation in <Answer>...</Answer> tags. For example, if your translation is "Hello world", the last part of your output should be <Answer>Hello world</Answer>.
 """
     return prompt
 
@@ -63,7 +61,7 @@ In such case, explain which collocation meaning you think is most appropriate in
 
 Using all the information provided above, now please translate the sentence into {tgt_lang}.
 Remember your source sentence is: {sent}
-Please enclose your translation in <Answer>...</Answer> tags.For example, if your translation is "Hello world", the last part of your output should be <Answer>Hello world</Answer>.
+Please enclose your translation in <Answer>...</Answer> tags. For example, if your translation is "Hello world", the last part of your output should be <Answer>Hello world</Answer>.
 """
     return prompt
 
