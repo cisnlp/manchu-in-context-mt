@@ -9,7 +9,7 @@ from my_pipeline.get_components import (convert2buleku_ortho, morphology_analyze
                             get_grammar_sections, grammar_sections_sp_dict,grammar_sections_l_dict,grammar_sections_lp_dict,
                             get_manchu_entries_encrypted, transform_sen, encrypt_parallelSent,
                             word_to_sentence_mnc2eng)
-#python generate_prompts.py --test_sens mono_sens_long_140000.txt --para bm25 --grammar grammar_basic --cot None
+
 
 # Function to get arguments
 def get_parser():

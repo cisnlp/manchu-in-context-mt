@@ -26,6 +26,13 @@ python pipeline.py --model_id llama3_3b --test_sens test_sens337_mnc.txt --para 
 ```
 The output is a list of tuples (mnc_sen,prompt,generated_text,translation), saved as `results_test_sens337_mnc_llama3_3b_bm25_None_None.pkl`.
 
+## Generating prompts
+
+Alternatively, you can use `generate_prompts.py` to only generate a list of prompts, without running the LLMs:
+```bash
+python generate_prompts.py --test_sens test_sens337_mnc.txt --para bm25 --grammar grammar_basic --cot None
+```
+
 ## Citation
 If you find our code useful for your research, please cite:
 
