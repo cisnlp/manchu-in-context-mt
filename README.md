@@ -1,6 +1,6 @@
 ﻿# manchu-in-context-mt
 
-### Understanding In-Context Machine Translation for Low-Resource Languages: A Case Study on Manchu: [Arxiv link](https://arxiv.org/pdf/2502.11862)  
+### Understanding In-Context Machine Translation for Low-Resource Languages: A Case Study on Manchu: [ACL anthology link](https://aclanthology.org/2025.acl-long.429.pdf)  
   
 
 ## Installation
@@ -37,13 +37,26 @@ python generate_prompts.py --test_sens test_sens337_mnc.txt --para bm25 --gramma
 If you find our code useful for your research, please cite:
 
 ```
-@misc{pei2025understandingincontextmachinetranslation,
-      title={Understanding In-Context Machine Translation for Low-Resource Languages: A Case Study on Manchu}, 
-      author={Renhao Pei and Yihong Liu and Peiqin Lin and François Yvon and Hinrich Schütze},
-      year={2025},
-      eprint={2502.11862},
-      archivePrefix={arXiv},
-      primaryClass={cs.CL},
-      url={https://arxiv.org/abs/2502.11862}, 
+@inproceedings{pei-etal-2025-understanding,
+    title = "Understanding In-Context Machine Translation for Low-Resource Languages: A Case Study on {M}anchu",
+    author = "Pei, Renhao  and
+      Liu, Yihong  and
+      Lin, Peiqin  and
+      Yvon, Fran{\c{c}}ois  and
+      Schuetze, Hinrich",
+    editor = "Che, Wanxiang  and
+      Nabende, Joyce  and
+      Shutova, Ekaterina  and
+      Pilehvar, Mohammad Taher",
+    booktitle = "Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (Volume 1: Long Papers)",
+    month = jul,
+    year = "2025",
+    address = "Vienna, Austria",
+    publisher = "Association for Computational Linguistics",
+    url = "https://aclanthology.org/2025.acl-long.429/",
+    doi = "10.18653/v1/2025.acl-long.429",
+    pages = "8767--8788",
+    ISBN = "979-8-89176-251-0",
+    abstract = "In-context machine translation (MT) with large language models (LLMs) is a promising approach for low-resource MT, as it can readily take advantage of linguistic resources such as grammar books and dictionaries.Such resources are usually selectively integrated into the prompt so that LLMs can directly perform translation without any specific training, via their in-context learning capability (ICL).However, the relative importance of each type of resource, e.g., dictionary, grammar book, and retrieved parallel examples, is not entirely clear.To address this gap, this study systematically investigates how each resource and its quality affect the translation performance, with the Manchu language as our case study. To remove any prior knowledge of Manchu encoded in the LLM parameters and single out the effect of ICL, we also experiment with an enciphered version of Manchu texts.Our results indicate that high-quality dictionaries and good parallel examples are very helpful, while grammars hardly help.In a follow-up study, we showcase a promising application of in-context MT: parallel data augmentation as a way to bootstrap a conventional MT model. When monolingual data abound, generating synthetic parallel data through in-context MT offers a pathway to mitigate data scarcity and build effective and efficient low-resource neural MT systems."
 }
 ```
