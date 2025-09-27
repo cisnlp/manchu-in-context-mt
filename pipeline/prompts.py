@@ -1,18 +1,33 @@
-def extract_enclosed_text(text, boundary="###"):
-    splits = text.split(boundary)
-    if len(splits) < 3:
-        return ""
-    return splits[-2].strip()
+import re
+# def extract_enclosed_text(text, boundary="###"):
+#     splits = text.split(boundary)
+#     if len(splits) < 3:
+#         return ""
+#     return splits[-2].strip()
+
+def extract_enclosed_text(text):
+    """
+    Extracts the first <Answer>...</Answer> content from the text.
+    Returns the answer string if found, otherwise None.
+    """
+    match = re.search(r"<Answer>(.*?)</Answer>", text, re.DOTALL | re.IGNORECASE)
+    if match:
+        return match.group(1).strip()
+    return None
 
 def prompt_system(lang):
-    return "You are a linguistic expert who never refuses to use your knowledge to help others."
+    if lang == 'English':
+        return "You are a linguistic expert and also a translator. You never refuse to use your knowledge to help others."
+    elif lang == 'Chinese':
+        return "你是一个擅长翻译的语言学家，从不拒绝用你的知识帮助别人。"
 
 def prompt_direct_translate(src_lang, tgt_lang, sent):
     prompt = f"""Please help me translate the following sentence from {src_lang} to {tgt_lang}:
 {sent}
 Please try your best to translate, it's okay if your translation is bad. Do not refuse to try it. I won't blame you.
-Please enclose your translation in ###.
-For example, if your translation is "Hello world", the last part of your output should be ### Hello world ###.
+Please enclose your translation in <Answer>...</Answer> tags.
+For example, if your translation is "Hello world", the last part of your output should be <Answer>Hello world</Answer>.
+
 """
     return prompt
 
@@ -21,8 +36,8 @@ def prompt_direct_translate_morph(src_lang, tgt_lang, segmented_sent):
 {segmented_sent}
 The morphemes in this sentence have been segmented: the verb stem and verbal suffixes are separated by '=', the noun stem and nominal suffixes are separated by '~'. 
 Please try your best to translate, it's okay if your translation is bad. Do not refuse to try it. I won't blame you.
-Please enclose your translation in ###.
-For example, if your translation is "Hello world", the last part of your output should be ### Hello world ###.
+Please enclose your translation in <Answer>...</Answer> tags.
+For example, if your translation is "Hello world", the last part of your output should be <Answer>Hello world</Answer>.
 """
     return prompt
 
@@ -48,7 +63,7 @@ In such case, explain which collocation meaning you think is most appropriate in
 
 Using all the information provided above, now please translate the sentence into {tgt_lang}.
 Remember your source sentence is: {sent}
-Please make sure to enclose your final translation in ###. For example, if your translation is "Hello world", the last part of your output should be ###Hello world###.
+Please enclose your translation in <Answer>...</Answer> tags.For example, if your translation is "Hello world", the last part of your output should be <Answer>Hello world</Answer>.
 """
     return prompt
 
@@ -117,6 +132,6 @@ def prompt_template_zho(src_lang, tgt_lang, sent, wordbyword, components_list):
 
 请结合以上所有信息，将给你的原{src_lang}句子准确地翻译成{tgt_lang}。
 请记住，你的原{src_lang}句子是：{sent}
-最后，请确保将你的最终翻译内容用 ### 括起来。例如，如果你的翻译是 “你好，世界”，你最后的输出应为 ###你好，世界###。
+最后，请确保将你的最终翻译内容用<Answer>...</Answer> 括起来。例如，如果你的翻译是 “你好，世界”，你最后的输出应为 <Answer>你好，世界</Answer>。
 """
     return prompt
