@@ -1,10 +1,10 @@
 from tqdm import tqdm
 import argparse
 import pickle
-from my_pipeline.prompts import extract_enclosed_text, prompt_system, prompt_direct_translate, prompt_direct_translate_morph, prompt_template, component_cot_Ca, component_cot_Cas, component_para, component_grammar
+from pipeline.prompts import extract_enclosed_text, prompt_system, prompt_direct_translate, prompt_direct_translate_morph, prompt_template, component_cot_Ca, component_cot_Cas, component_para, component_grammar
 def default_value():
     return 'not found in dictionary, could be a proper noun or a typo'
-from my_pipeline.get_components import (convert2buleku_ortho, morphology_analyzer_plus_assembled_dict,get_manchu_entries,assembled_dict,
+from pipeline.get_components import (convert2buleku_ortho, morphology_analyzer_plus_assembled_dict,get_manchu_entries,assembled_dict,
                             get_parallelSent, get_parallelSent_bm25_top_n,prepare_bm25_retrieval_corpus,
                             get_grammar_sections, grammar_sections_sp_dict,grammar_sections_l_dict,grammar_sections_lp_dict,
                             get_manchu_entries_encrypted, transform_sen, encrypt_parallelSent,
